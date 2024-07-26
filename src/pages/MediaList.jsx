@@ -12,7 +12,7 @@ import { setAppState } from "../redux/features/appStateSlice";
 import { setGlobalLoading } from "../redux/features/globalLoadingSlice";
 import { toast } from "react-toastify";
 import usePrevious from "../hooks/usePrevious";
-import favoriteApi from "../api/modules/favorite.api"; // Import the favorite API
+import favoriteApi from "../api/modules/favorite.api";
 import reviewApi from "../api/modules/review.api";
 
 const MediaList = () => {
