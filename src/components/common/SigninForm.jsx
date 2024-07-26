@@ -1,19 +1,27 @@
 import { LoadingButton } from "@mui/lab";
-import { Alert, Box, Button, Stack, TextField } from "@mui/material";
+import { Alert, Box, Button, Stack, TextField, IconButton, InputAdornment } from "@mui/material";
 import { useFormik } from "formik";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import userApi from "../../api/modules/user.api";
 import { setAuthModalOpen } from "../../redux/features/authModalSlice";
 import { setUser } from "../../redux/features/userSlice";
+
 
 const SigninForm = ({ switchAuthState }) => {
     const dispatch = useDispatch();
 
     const [isLoginRequest, setIsLoginRequest] = useState(false);
     const [errorMessage, setErrorMessage] = useState();
+    const [showPassword, setShowPassword] = useState(false);
+
+    const handleClickShowPassword = () => {
+        setShowPassword(!showPassword);
+    };
 
     const signinForm = useFormik({
         initialValues: {
@@ -31,7 +39,6 @@ const SigninForm = ({ switchAuthState }) => {
         onSubmit: async values => {
             setErrorMessage(undefined);
             setIsLoginRequest(true);
-            console.log("asdasdasdasd");
             const { response, err } = await userApi.signin(values);
             setIsLoginRequest(false);
 
@@ -61,7 +68,7 @@ const SigninForm = ({ switchAuthState }) => {
                     helperText={signinForm.touched.username && signinForm.errors.username}
                 />
                 <TextField
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="password"
                     name="password"
                     fullWidth
@@ -70,6 +77,19 @@ const SigninForm = ({ switchAuthState }) => {
                     color="success"
                     error={signinForm.touched.password && signinForm.errors.password !== undefined}
                     helperText={signinForm.touched.password && signinForm.errors.password}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    aria-label="toggle password visibility"
+                                    onClick={handleClickShowPassword}
+                                    edge="end"
+                                >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            </InputAdornment>
+                        )
+                    }}
                 />
             </Stack>
 

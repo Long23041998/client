@@ -12,6 +12,8 @@ import { setAppState } from "../redux/features/appStateSlice";
 import { setGlobalLoading } from "../redux/features/globalLoadingSlice";
 import { toast } from "react-toastify";
 import usePrevious from "../hooks/usePrevious";
+import favoriteApi from "../api/modules/favorite.api"; // Import the favorite API
+import reviewApi from "../api/modules/review.api";
 
 const MediaList = () => {
     const { mediaType } = useParams();
@@ -24,8 +26,9 @@ const MediaList = () => {
     const prevMediaType = usePrevious(mediaType);
     const dispatch = useDispatch();
 
-    const mediaCategories = useMemo(() => ["popular", "top_rated"], []);
-    const category = ["popular", "top rated"];
+    // Updated categories to include "Favorites" and "Non-favorites"
+    const mediaCategories = useMemo(() => ["popular", "top_rated", "Not review", "non_favorites"], []);
+    const categoryLabels = ["popular", "top rated", "Not reviewed", "Not favorited"];
 
     useEffect(() => {
         dispatch(setAppState(mediaType));
@@ -37,19 +40,86 @@ const MediaList = () => {
             if (currPage === 1) dispatch(setGlobalLoading(true));
             setMediaLoading(true);
 
-            const { response, err } = await mediaApi.getList({
-                mediaType,
-                mediaCategory: mediaCategories[currCategory],
-                page: currPage
-            });
+            let response;
+            let err;
+
+            if (mediaCategories[currCategory] === "favorites") {
+                const { response: favResponse, err: favErr } = await favoriteApi.getList();
+                response = favResponse;
+                console.log("Favorite Response:", favResponse);
+                err = favErr;
+            } else if (mediaCategories[currCategory] === "non_favorites") {
+                // Get all medias and then filter out favorites
+                const { response: allResponse, err: allErr } = await mediaApi.getList({
+                    mediaType,
+                    mediaCategory: "popular", // or any default category
+                    page: currPage,
+
+                });
+
+                const { response: favResponse, err: favErr } = await favoriteApi.getList();
+
+                console.log("All Media Response:", allResponse);
+                console.log("Favorite Response:", favResponse);
+                const favoritedIds = favResponse.map(item => item.mediaTitle);
+                console.log("Favorite Ids:", favoritedIds);
+                // response = allResponse.results.filter(mov => !favoritedIds.includes(mov.id));
+                const filteredResults = allResponse.results.filter(item => !favoritedIds.includes(item.original_title));
+                console.log("filteredResults:", filteredResults);
+                response = {
+                    ...allResponse, // Copy all properties from allResponse
+                    results: filteredResults // Replace results with filtered results
+                };
+
+                console.log("Final Response:", response);
+                err = allErr || favErr;
+            } else if (mediaCategories[currCategory] === "Not review") {
+                const { response: allResponse, err: allErr } = await mediaApi.getList({
+                    mediaType,
+                    mediaCategory: "popular", // or any default category
+                    page: currPage,
+
+                });
+
+                const { response: favResponse, err: favErr } = await reviewApi.getList();
+
+                console.log("All Media Response:", allResponse);
+                console.log("Favorite Response:", favResponse);
+                const favoritedIds = favResponse.map(item => item.mediaTitle);
+                console.log("Favorite Ids:", favoritedIds);
+                // response = allResponse.results.filter(mov => !favoritedIds.includes(mov.id));
+                const filteredResults = allResponse.results.filter(item => !favoritedIds.includes(item.original_title));
+                console.log("filteredResults:", filteredResults);
+                response = {
+                    ...allResponse, // Copy all properties from allResponse
+                    results: filteredResults // Replace results with filtered results
+                };
+
+                console.log("Final Response:", response);
+                err = allErr || favErr;
+
+            }
+
+
+            else {
+                const { response: mediaResponse, err: mediaErr } = await mediaApi.getList({
+                    mediaType,
+                    mediaCategory: mediaCategories[currCategory],
+                    page: currPage
+                });
+                console.log("mediaResponse:", mediaResponse);
+                response = mediaResponse;
+                console.log("Response:", response);
+                err = mediaErr;
+            }
 
             setMediaLoading(false);
             dispatch(setGlobalLoading(false));
 
             if (err) toast.error(err.message);
             if (response) {
-                if (currPage !== 1) setMedias(m => [...m, ...response.results]);
-                else setMedias([...response.results]);
+                if (currPage !== 1) setMedias(m => [...m, ...response.results || response]);
+                else setMedias([...response.results || response]);
             }
         };
 
@@ -92,7 +162,7 @@ const MediaList = () => {
                         {mediaType === tmdbConfigs.mediaType.movie ? "Movies" : "TV Series"}
                     </Typography>
                     <Stack direction="row" spacing={2}>
-                        {category.map((cate, index) => (
+                        {categoryLabels.map((cate, index) => (
                             <Button
                                 key={index}
                                 size="large"

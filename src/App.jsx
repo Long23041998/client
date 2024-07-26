@@ -19,7 +19,7 @@ const App = () => {
   return (
     <ThemeProvider theme={themeConfigs.custom({ mode: themeMode })}>
       {/* config toastify */}
-      <ToastContainer
+      {/* <ToastContainer
         position="bottom-left"
         autoClose={5000}
         hideProgressBar={false}
@@ -28,7 +28,7 @@ const App = () => {
         pauseOnFocusLoss
         pauseOnHover
         theme={themeMode}
-      />
+      /> */}
       {/* mui reset css */}
       <CssBaseline />
 
